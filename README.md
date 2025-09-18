@@ -6,6 +6,7 @@
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
+![Jest](https://img.shields.io/badge/Jest-C21325?logo=jest&logoColor=white)
 
 Este é um projeto full-stack de e-commerce que simula um ambiente de loja virtual completo, desde a listagem de produtos até a criação e acompanhamento de pedidos com um fluxo de pagamento assíncrono.
 
@@ -29,21 +30,6 @@ Essa abordagem desacoplada aumenta a resiliência e a escalabilidade do sistema.
     - **Vantagem:** Leveza, simplicidade de configuração (especialmente com Docker) e performance excelente para o escopo do desafio.
     - **Desvantagem:** Não possui todas as garantias e funcionalidades complexas de um broker dedicado como o Kafka.
 
-## Sumário
-
-- [Funcionalidades](#funcionalidades)
-- [Tech Stack](#tech-stack)
-- [Pré-requisitos](#pré-requisitos)
-- [Como Rodar o Projeto (Setup)](#como-rodar-o-projeto-setup)
-  - [1. Variáveis de Ambiente](#1-variáveis-de-ambiente)
-  - [2. Backend](#2-backend)
-  - [3. Frontend](#3-frontend)
-- [Scripts Disponíveis](#scripts-disponíveis)
-- [Documentação da API](#documentação-da-api)
-  - [Autenticação](#autenticação)
-  - [Produtos](#produtos)
-  - [Pedidos (Orders)](#pedidos-orders)
-- [Testes](#testes)
 
 ## Demonstração(Principais Páginas)
 Aqui você pode ver uma prévia de como a aplicação funciona.
@@ -78,6 +64,7 @@ A aplicação é dividida em duas partes principais:
 - **Banco de Dados:** PostgreSQL
 - **Filas e Cache:** Redis
 - **Autenticação:** JWT (JSON Web Tokens) e bcrypt.js
+- **Testes:** **Jest**, **Supertest** e **jest-mock-extended**
 - **Ferramentas de Desenvolvimento:** `ts-node-dev`, `concurrently`
 
 #### **Frontend**
@@ -88,6 +75,28 @@ A aplicação é dividida em duas partes principais:
 - **Roteamento:** React Router DOM
 - **Requisições HTTP:** Axios
 - **Gerenciamento de Estado:** React Context API (`useAuth`, `useCart`)
+
+## Testes
+
+A API do back-end possui uma suíte de testes robusta utilizando **Jest** para garantir a qualidade e a estabilidade do código.
+
+### Estratégia de Testes
+A estratégia adotada combina dois tipos de testes:
+- **Testes Unitários:** Focados em validar as menores unidades de código de forma isolada, como middlewares. Isso garante que a lógica interna de cada função se comporte como o esperado.
+- **Testes de Integração:** Focados em validar a interação entre as diferentes partes da API (rotas, controllers, middlewares e serviços). Estes testes simulam requisições HTTP reais e verificam se o sistema como um todo responde corretamente, utilizando mocks para isolar dependências externas como o banco de dados e o Redis.
+
+### Como Rodar os Testes
+Todos os testes estão localizados na pasta `back-end/__tests__`.
+
+```bash
+# 1. Navegue para a pasta do back-end
+cd back-end
+
+# 2. Rode todos os testes de uma vez
+npm test
+
+# OU, para rodar um arquivo de teste específico:
+npx jest __tests__/controllers/auth.controller.test.ts
 
 ## Pré-requisitos
 
@@ -170,8 +179,9 @@ Agora você pode acessar a aplicação no seu navegador, geralmente em `http://l
 
 ## Scripts Disponíveis
 
-Dentro de `back-end/package.json`, o principal script é:
-- `npm run dev`: Inicia a API e o serviço de estoque simultaneamente.
+Dentro de `back-end/package.json`, os principais scripts são:
+- `npm run dev`: Inicia a API e os serviços de fila simultaneamente.
+- `npm test`: Roda a suíte de testes completa com o Jest.
 
 Dentro de `front-end/package.json`:
 - `npm run dev`: Inicia o servidor de desenvolvimento do React (Vite).
