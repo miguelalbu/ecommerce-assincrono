@@ -41,7 +41,8 @@ Aqui você pode ver uma prévia de como a aplicação funciona.
 ![Fluxo de Checkout](./docs/images/image3.png)
 ### Console de Logs
 ![Fluxo de Checkout](./docs/images/image4.png)
-
+### Console Jest Tests
+![Console Tests](./docs/images/image5.png)
 
 ## Funcionalidades
 
