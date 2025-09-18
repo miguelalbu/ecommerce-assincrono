@@ -46,7 +46,9 @@ Aqui você pode ver uma prévia de como a aplicação funciona.
 
 ## Funcionalidades
 
-- **Autenticação de Usuários:** Cadastro e Login com JWT.
+- **Autenticação de Usuários:** 
+    - Cadastro e Login com JWT.
+    - Validação de formato para CPF/CNPJ no registro para garantir a integridade dos dados.
 - **Gestão de Produtos:** Admins podem criar e atualizar produtos.
 - **Listagem de Produtos:** Página pública para visualização e busca de produtos.
 - **Carrinho de Compras:** Contexto completo para adicionar, remover e atualizar itens.

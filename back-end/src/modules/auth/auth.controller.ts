@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../../services/prisma';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { cpf, cnpj } from 'cpf-cnpj-validator';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
@@ -13,6 +14,12 @@ router.post('/register', async (req: Request, res: Response) => {
 
   if (!email || !password || !name || !cpf_cnpj) {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  }
+
+  // Validação básica dos campos CPF/CNPJ
+  const documentoLimpo = cpf_cnpj.replace(/\D/g, '');
+  if (!cpf.isValid(documentoLimpo) && !cnpj.isValid(documentoLimpo)) {
+    return res.status(400).json({ error: 'CPF ou CNPJ inválido.' });
   }
 
   try {

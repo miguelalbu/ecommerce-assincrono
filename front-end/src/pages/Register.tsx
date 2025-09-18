@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, FileText, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { cpf, cnpj } from 'cpf-cnpj-validator';
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
@@ -16,6 +17,14 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Validação básica dos campos CPF/CNPJ
+    const documentoLimpo = cpf_cnpj.replace(/\D/g, '');
+    if (!cpf.isValid(documentoLimpo) && !cnpj.isValid(documentoLimpo)) {
+      setError('CPF ou CNPJ inválido.');
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
