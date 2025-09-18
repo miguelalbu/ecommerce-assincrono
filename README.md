@@ -197,7 +197,7 @@ Todos os endpoints são prefixados com `/api` (ajuste conforme sua configuraçã
 ### Autenticação
 | Método HTTP | Endpoint           | Descrição                       | Autenticação | Corpo da Requisição (Exemplo)                                    |
 | :---------- | :----------------- | :------------------------------ | :----------- | :--------------------------------------------------------------- |
-| `POST`      | `/auth/register`   | Registra um novo usuário/cliente. | Nenhuma      | `{"name": "...", "email": "...", "password": "...", "cpf_cnpj": "..."}` |
+| `POST`      | `/auth/register`   | Registra um novo usuário/cliente. O campo `cpf_cnpj` passa por validação de formato. | Nenhuma      | `{"name": "...", "email": "...", "password": "...", "cpf_cnpj": "..."}` |
 | `POST`      | `/auth/login`      | Autentica um usuário e retorna um token JWT. | Nenhuma | `{"email": "...", "password": "..."}`                            |
 
 ### Produtos
