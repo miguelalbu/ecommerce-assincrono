@@ -9,6 +9,26 @@
 
 Este é um projeto full-stack de e-commerce que simula um ambiente de loja virtual completo, desde a listagem de produtos até a criação e acompanhamento de pedidos com um fluxo de pagamento assíncrono.
 
+## Arquitetura Escolhida
+
+A arquitetura deste projeto foi desenhada para separar as responsabilidades e garantir que operações demoradas, como processamento de pagamento e validação de estoque, não afetem a experiência do usuário. O fluxo principal é:
+
+1.  **API REST Síncrona (Frontend ↔ Backend):** O cliente interage com uma API REST tradicional para operações rápidas como login, cadastro, visualização de produtos e criação de pedidos.
+2.  **Mensageria com Redis Streams (Backend ↔ Serviços):** Quando um pedido é criado, a API publica um evento no Redis Streams. Ela não espera o processamento do pagamento; apenas notifica que um novo pedido precisa ser processado.
+3.  **Serviços Assíncronos (Consumidores):** Serviços independentes (`stock-service`) escutam esses eventos no Redis. Quando um pagamento é confirmado, o serviço de estoque é acionado para validar e debitar os produtos do banco de dados, atualizando o status do pedido.
+4.  **Consistência Eventual:** O status do pedido no front-end é atualizado via polling, fazendo requisições periódicas à API. Isso reflete o estado do banco de dados, que eventualmente se torna consistente após o processamento dos eventos.
+
+Essa abordagem desacoplada aumenta a resiliência e a escalabilidade do sistema.
+
+## Explicação de Trade-offs
+
+- **Polling vs. WebSockets:** Para a atualização de status no front-end, foi escolhido o **polling** (requisições a cada X segundos) em vez de WebSockets.
+    - **Vantagem:** Simplicidade de implementação tanto no front-end quanto no back-end.
+    - **Desvantagem:** Pode haver um pequeno atraso na atualização e gera mais requisições HTTP. Para este projeto, a simplicidade e a robustez do polling foram priorizadas.
+- **Redis Streams como Message Broker:** Foi utilizado Redis Streams em vez de soluções mais robustas como Kafka ou RabbitMQ.
+    - **Vantagem:** Leveza, simplicidade de configuração (especialmente com Docker) e performance excelente para o escopo do desafio.
+    - **Desvantagem:** Não possui todas as garantias e funcionalidades complexas de um broker dedicado como o Kafka.
+
 ## Sumário
 
 - [Funcionalidades](#funcionalidades)
