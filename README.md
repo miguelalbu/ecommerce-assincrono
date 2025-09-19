@@ -19,7 +19,7 @@ Aqui você pode ver uma prévia de como a aplicação funciona.
 ### Página de Produtos
 ![Fluxo de Checkout](./docs/images/image3.png)
 ### Console Jest Tests(Testes no Auth)
-![Console Tests](./docs/images/image5.png)
+![Console Tests](./docs/images/image6.png)
 
 ## Tech Stack
 

@@ -16,9 +16,7 @@ router.post('/register', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
 
-  // Validação básica dos campos CPF/CNPJ
-  const documentoLimpo = cpf_cnpj.replace(/\D/g, '');
-  if (!cpf.isValid(documentoLimpo) && !cnpj.isValid(documentoLimpo)) {
+  if (!cpf.isValid(cpf_cnpj) && !cnpj.isValid(cpf_cnpj)) {
     return res.status(400).json({ error: 'CPF ou CNPJ inválido.' });
   }
 

@@ -51,7 +51,7 @@ describe('POST /auth/register', () => {
   beforeEach(() => { jest.clearAllMocks(); });
 
   it('deve registrar um novo usuário e cliente com sucesso', async () => {
-    const registerData = { name: 'Novo Usuário', email: 'novo@teste.com', password: 'senha forte', cpf_cnpj: '111.222.333-44' };
+    const registerData = { name: 'Novo Usuário', email: 'novo@teste.com', password: 'senha forte', cpf_cnpj: '713.968.044-20' };
     const { password, ...customerData } = registerData;
 
     mockedBcrypt.hash.mockResolvedValue('senha_super_criptografada' as never);
