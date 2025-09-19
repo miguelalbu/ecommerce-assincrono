@@ -10,27 +10,6 @@
 
 Este é um projeto full-stack de e-commerce que simula um ambiente de loja virtual completo, desde a listagem de produtos até a criação e acompanhamento de pedidos com um fluxo de pagamento assíncrono.
 
-## Arquitetura Escolhida
-
-A arquitetura deste projeto foi desenhada para separar as responsabilidades e garantir que operações demoradas, como processamento de pagamento e validação de estoque, não afetem a experiência do usuário. O fluxo principal é:
-
-1.  **API REST Síncrona (Frontend ↔ Backend):** O cliente interage com uma API REST tradicional para operações rápidas como login, cadastro, visualização de produtos e criação de pedidos.
-2.  **Mensageria com Redis Streams (Backend ↔ Serviços):** Quando um pedido é criado, a API publica um evento no Redis Streams. Ela não espera o processamento do pagamento; apenas notifica que um novo pedido precisa ser processado.
-3.  **Serviços Assíncronos (Consumidores):** Serviços independentes (`stock-service`) escutam esses eventos no Redis. Quando um pagamento é confirmado, o serviço de estoque é acionado para validar e debitar os produtos do banco de dados, atualizando o status do pedido.
-4.  **Consistência Eventual:** O status do pedido no front-end é atualizado via polling, fazendo requisições periódicas à API. Isso reflete o estado do banco de dados, que eventualmente se torna consistente após o processamento dos eventos.
-
-Essa abordagem desacoplada aumenta a resiliência e a escalabilidade do sistema.
-
-## Explicação de Trade-offs
-
-- **Polling vs. WebSockets:** Para a atualização de status no front-end, foi escolhido o **polling** (requisições a cada X segundos) em vez de WebSockets.
-    - **Vantagem:** Simplicidade de implementação tanto no front-end quanto no back-end.
-    - **Desvantagem:** Pode haver um pequeno atraso na atualização e gera mais requisições HTTP. Para este projeto, a simplicidade e a robustez do polling foram priorizadas.
-- **Redis Streams como Message Broker:** Foi utilizado Redis Streams em vez de soluções mais robustas como Kafka ou RabbitMQ.
-    - **Vantagem:** Leveza, simplicidade de configuração (especialmente com Docker) e performance excelente para o escopo do desafio.
-    - **Desvantagem:** Não possui todas as garantias e funcionalidades complexas de um broker dedicado como o Kafka.
-
-
 ## Demonstração(Principais Páginas)
 Aqui você pode ver uma prévia de como a aplicação funciona.
 ### Painel Admin
@@ -39,10 +18,88 @@ Aqui você pode ver uma prévia de como a aplicação funciona.
 ![Fluxo de Checkout](./docs/images/image2.png)
 ### Página de Produtos
 ![Fluxo de Checkout](./docs/images/image3.png)
-### Console de Logs
-![Fluxo de Checkout](./docs/images/image4.png)
-### Console Jest Tests
+### Console Jest Tests(Testes no Auth)
 ![Console Tests](./docs/images/image5.png)
+
+## Tech Stack
+
+#### **Backend**
+- **Linguagem:** TypeScript
+- **Framework:** Node.js com Express.js
+- **Banco de Dados:** PostgreSQL (via Docker)
+- **Mensageria/Cache:** Redis (via Docker)
+- **ORM:** Prisma
+- **Autenticação:** JWT (JSON Web Tokens) e bcrypt.js
+- **Testes:** **Jest**, **Supertest** e **jest-mock-extended**
+- **Infraestrutura:** Docker Compose
+- **Ferramentas de Desenvolvimento:** `ts-node-dev`, `concurrently`
+
+# Como Rodar o Projeto
+
+Este projeto é totalmente containerizado com Docker Compose. Para rodar, você precisa ter o [Docker](https://www.docker.com/) e o [Node.js](https://nodejs.org/en/) instalados.
+
+**1. Clone e Configure o Ambiente**
+
+Primeiro, clone o repositório, navegue até a pasta e crie o arquivo de ambiente a partir do exemplo.
+
+```bash
+# Clone o projeto
+git clone <URL_DO_SEU_REPOSITORIO>
+cd ecommerce
+
+# Crie o arquivo .env na raiz a partir do exemplo do back-end
+cp back-end/.env.example .env
+```
+**Importante:** Abra o arquivo .env e defina sua JWT_SECRET. As outras variáveis já estão configuradas para o ambiente Docker.
+
+**2. Execute os Serviços**
+Com o .env pronto, o processo é dividido em três ações principais, que você pode executar em terminais separados.
+
+🖥️ Terminal 1 (Raiz do Projeto): Subir o Back-end
+```bash
+# Constrói as imagens (na primeira vez) e inicia a API, DB e Redis
+docker-compose up --build
+```
+*Deixe este terminal rodando.*
+
+🖥️ Terminal 2 (Raiz do Projeto): Preparar o Banco de Dados
+```bash
+# Em um novo terminal, execute a migration e o seed
+docker-compose exec api npx prisma migrate dev && docker-compose exec api npx prisma db seed
+```
+*> Após este comando, o banco estará pronto com dados de teste, incluindo um usuário admin (admin@ecommerce.com / admin123).*
+
+🖥️ Terminal 3 (Pasta front-end): Iniciar o Front-end
+```bash
+# Em um novo terminal, inicie a aplicação React
+cd front-end
+npm install
+npm run dev
+```
+Pronto! A aplicação estará disponível em http://localhost:5173.
+
+## Testes
+
+A API do back-end possui uma suíte de testes robusta utilizando **Jest** para garantir a qualidade e a estabilidade do código.
+
+### Estratégia de Testes
+A estratégia adotada combina dois tipos de testes:
+- **Testes Unitários:** Focados em validar as menores unidades de código de forma isolada, como middlewares. Isso garante que a lógica interna de cada função se comporte como o esperado.
+- **Testes de Integração:** Focados em validar a interação entre as diferentes partes da API (rotas, controllers, middlewares e serviços). Estes testes simulam requisições HTTP reais e verificam se o sistema como um todo responde corretamente, utilizando mocks para isolar dependências externas como o banco de dados e o Redis.
+
+### Como Rodar os Testes
+Com o ambiente Docker em execução (`docker-compose up`), os testes podem ser executados dentro do contêiner da API.
+
+```bash
+# Na raiz do projeto, execute todos os testes de uma vez
+docker-compose exec api npm test
+
+# 2. Rode todos os testes de uma vez
+npm test
+
+# OU, para rodar um arquivo de teste específico:
+docker-compose exec api npx jest __tests__/controllers/auth.controller.test.ts
+```
 
 ## Funcionalidades
 
@@ -56,139 +113,15 @@ Aqui você pode ver uma prévia de como a aplicação funciona.
 - **Meus Pedidos:** Página para o usuário visualizar o histórico e o status de seus pedidos.
 - **Processamento Assíncrono:** Uso de Redis para simular um fluxo de pagamento e atualização de estoque que não trava a experiência do usuário.
 
-## Tech Stack
+## Funcionalidades de Bônus Implementadas
 
-A aplicação é dividida em duas partes principais:
+Além dos requisitos principais, o projeto implementa várias funcionalidades de bônus que aumentam sua robustez e profissionalismo:
 
-#### **Backend**
-- **Linguagem:** TypeScript
-- **Framework:** Node.js com Express.js
-- **ORM:** Prisma
-- **Banco de Dados:** PostgreSQL
-- **Filas e Cache:** Redis
-- **Autenticação:** JWT (JSON Web Tokens) e bcrypt.js
-- **Testes:** **Jest**, **Supertest** e **jest-mock-extended**
-- **Ferramentas de Desenvolvimento:** `ts-node-dev`, `concurrently`
-
-#### **Frontend**
-- **Biblioteca:** React
-- **Linguagem:** TypeScript
-- **Estilização:** Tailwind CSS
-- **Ícones:** Lucide React
-- **Roteamento:** React Router DOM
-- **Requisições HTTP:** Axios
-- **Gerenciamento de Estado:** React Context API (`useAuth`, `useCart`)
-
-## Testes
-
-A API do back-end possui uma suíte de testes robusta utilizando **Jest** para garantir a qualidade e a estabilidade do código.
-
-### Estratégia de Testes
-A estratégia adotada combina dois tipos de testes:
-- **Testes Unitários:** Focados em validar as menores unidades de código de forma isolada, como middlewares. Isso garante que a lógica interna de cada função se comporte como o esperado.
-- **Testes de Integração:** Focados em validar a interação entre as diferentes partes da API (rotas, controllers, middlewares e serviços). Estes testes simulam requisições HTTP reais e verificam se o sistema como um todo responde corretamente, utilizando mocks para isolar dependências externas como o banco de dados e o Redis.
-
-### Como Rodar os Testes
-Todos os testes estão localizados na pasta `back-end/__tests__`.
-
-```bash
-# 1. Navegue para a pasta do back-end
-cd back-end
-
-# 2. Rode todos os testes de uma vez
-npm test
-
-# OU, para rodar um arquivo de teste específico:
-npx jest __tests__/controllers/auth.controller.test.ts
-
-## Pré-requisitos
-
-Antes de começar, você precisa ter as seguintes ferramentas instaladas na sua máquina:
-- [Node.js](https://nodejs.org/en/) (v18 ou superior)
-- [npm](https://www.npmjs.com/) ou [Yarn](https://yarnpkg.com/)
-- [Git](https://git-scm.com/)
-- [Docker](https://www.docker.com/) (Recomendado para rodar PostgreSQL e Redis facilmente)
-- Um cliente de terminal (Git Bash, PowerShell, etc.)
-
-## Como Rodar o Projeto (Setup)
-
-Siga os passos abaixo para configurar e rodar o ambiente de desenvolvimento local.
-
-```bash
-# 1. Clone o repositório para sua máquina
-git clone <URL_DO_SEU_REPOSITORIO>
-
-# 2. Navegue para a pasta do projeto
-cd ecommerce
-```
-
-### 1. Variáveis de Ambiente
-
-No back-end, você precisa configurar um arquivo `.env`.
-
-```bash
-# 1. Navegue até a pasta do back-end
-cd back-end
-
-# 2. Copie o arquivo de exemplo
-cp .env.example .env
-```
-Agora, abra o arquivo `.env` e preencha as variáveis, principalmente a `DATABASE_URL` e a `JWT_SECRET`.
-
-**`back-end/.env`**
-```env
-# URL de conexão com o seu banco de dados PostgreSQL
-# Exemplo: postgresql://SEU_USER:SUA_SENHA@localhost:5432/SEU_BANCO
-DATABASE_URL="postgresql://docker:docker@localhost:5432/ecommerce"
-
-# Chave secreta para gerar os tokens JWT. Pode ser qualquer string segura.
-JWT_SECRET="SUA_CHAVE_SECRETA_SUPER_FORTE"
-```
-
-### 2. Backend
-
-Com as variáveis de ambiente configuradas, vamos preparar e iniciar o back-end.
-
-```bash
-# 1. Ainda na pasta back-end, instale as dependências
-npm install
-
-# 2. Rode as migrations do Prisma para criar as tabelas no banco de dados
-npx prisma migrate dev
-
-# 3. (Opcional) Popule o banco com dados de teste, se tiver um script de seed
-# npx prisma db seed
-
-# 4. Inicie o servidor da API e os serviços do Redis
-npm run dev
-```
-Seu back-end estará rodando! O comando `npm run dev` usa o `concurrently` para iniciar a API e os serviços de fila em um único terminal.
-
-### 3. Frontend
-
-Abra um **novo terminal** para rodar o front-end.
-
-```bash
-# 1. Navegue para a pasta do front-end
-cd front-end
-
-# 2. Instale as dependências
-npm install
-
-# 3. Inicie a aplicação React
-npm run dev
-```
-Agora você pode acessar a aplicação no seu navegador, geralmente em `http://localhost:5173`.
-
-## Scripts Disponíveis
-
-Dentro de `back-end/package.json`, os principais scripts são:
-- `npm run dev`: Inicia a API e os serviços de fila simultaneamente.
-- `npm test`: Roda a suíte de testes completa com o Jest.
-
-Dentro de `front-end/package.json`:
-- `npm run dev`: Inicia o servidor de desenvolvimento do React (Vite).
-- `npm run build`: Compila a aplicação para produção.
+- **⭐ Infraestrutura com Docker Compose:** Todo o ambiente de back-end, incluindo a API, o banco de dados PostgreSQL e o Redis, é orquestrado com um único arquivo `docker-compose.yml`, garantindo um setup de desenvolvimento rápido, consistente e isolado.
+- **⭐ Permissões Diferenciadas:** O sistema distingue usuários comuns de administradores (`Role-Based Access Control`), onde rotas críticas como a criação de produtos são protegidas e acessíveis apenas por admins.
+- **⭐ Validação de Dados no Back-end:** O endpoint de registro de clientes inclui a validação de formato para CPF/CNPJ, garantindo maior integridade dos dados armazenados.
+- **⭐ Seed de Dados:** O projeto conta com um script de seed (`prisma db seed`) para popular o banco de dados com dados de teste, incluindo produtos e um usuário administrador padrão (`admin@ecommerce.com` / `admin123`), agilizando o ambiente de desenvolvimento.
+- **⭐ Consistência com Transações:** Operações críticas que envolvem múltiplas escrituras no banco, como o registro de um `Customer` e um `User` simultaneamente, são envoltas em transações do Prisma (`$transaction`) para garantir a atomicidade.
 
 ## Documentação da API
 
@@ -214,3 +147,24 @@ Todos os endpoints são prefixados com `/api` (ajuste conforme sua configuraçã
 | `GET`       | `/orders/my-orders`             | Retorna a lista de pedidos do usuário logado.     | Usuário      | N/A                                                                                           |
 | `GET`       | `/orders/:id`                   | Retorna os detalhes de um pedido específico.      | Nenhuma      | N/A                                                                                           |
 | `POST`      | `/orders/:id/confirm-payment`   | Simula a confirmação de pagamento de um pedido.   | Usuário      | N/A                                                                                           |
+
+
+## Arquitetura Escolhida
+
+A arquitetura deste projeto foi desenhada para separar as responsabilidades e garantir que operações demoradas, como processamento de pagamento e validação de estoque, não afetem a experiência do usuário. O fluxo principal é:
+
+1.  **API REST Síncrona (Frontend ↔ Backend):** O cliente interage com uma API REST tradicional para operações rápidas como login, cadastro, visualização de produtos e criação de pedidos.
+2.  **Mensageria com Redis Streams (Backend ↔ Serviços):** Quando um pedido é criado, a API publica um evento no Redis Streams. Ela não espera o processamento do pagamento; apenas notifica que um novo pedido precisa ser processado.
+3.  **Serviços Assíncronos (Consumidores):** Serviços independentes (`stock-service`) escutam esses eventos no Redis. Quando um pagamento é confirmado, o serviço de estoque é acionado para validar e debitar os produtos do banco de dados, atualizando o status do pedido.
+4.  **Consistência Eventual:** O status do pedido no front-end é atualizado via polling, fazendo requisições periódicas à API. Isso reflete o estado do banco de dados, que eventualmente se torna consistente após o processamento dos eventos.
+
+Essa abordagem desacoplada aumenta a resiliência e a escalabilidade do sistema.
+
+## Explicação de Trade-offs
+
+- **Polling vs. WebSockets:** Para a atualização de status no front-end, foi escolhido o **polling** (requisições a cada X segundos) em vez de WebSockets.
+    - **Vantagem:** Simplicidade de implementação tanto no front-end quanto no back-end.
+    - **Desvantagem:** Pode haver um pequeno atraso na atualização e gera mais requisições HTTP. Para este projeto, a simplicidade e a robustez do polling foram priorizadas.
+- **Redis Streams como Message Broker:** Foi utilizado Redis Streams em vez de soluções mais robustas como Kafka ou RabbitMQ.
+    - **Vantagem:** Leveza, simplicidade de configuração (especialmente com Docker) e performance excelente para o escopo do desafio.
+    - **Desvantagem:** Não possui todas as garantias e funcionalidades complexas de um broker dedicado como o Kafka.

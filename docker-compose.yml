@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # Serviço do Banco de Dados PostgreSQL
-  db:
+  db: # O nome do serviço é 'db'
     image: postgres:14
     restart: always
     environment:
@@ -15,27 +15,29 @@ services:
       - "5432:5432"
 
   # Serviço do Sistema de Mensageria Redis
-  redis:
+  redis: # O nome do serviço é 'redis'
     image: redis:6-alpine
     restart: always
     ports:
       - "6379:6379"
 
-  # Opcional: Serviço do Backend (Node.js)
-  # Você pode adicionar isso depois de criar a estrutura do seu projeto Node.js
-  # app:
-  #   build: ./backend
-  #   command: npm run dev
-  #   volumes:
-  #     - ./backend:/app
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - db
-  #     - redis
-  #   environment:
-  #     DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-  #     REDIS_URL: redis://redis:6379
-      
+  # Serviço do Backend (Node.js) - AGORA ATIVADO
+  api: # Renomeei de 'app' para 'api' por clareza
+    build: 
+      context: ./back-end # O Dockerfile estará dentro da pasta back-end
+      dockerfile: Dockerfile
+    restart: always
+    command: npm run dev # Perfeito para desenvolvimento com hot-reload
+    volumes:
+      - ./back-end:/usr/src/app # Mapeia seu código local para dentro do contêiner
+      - /usr/src/app/node_modules # Evita que o node_modules local sobrescreva o do contêiner
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env # Puxa as variáveis do .env do back-end
+
 volumes:
   postgres_data:

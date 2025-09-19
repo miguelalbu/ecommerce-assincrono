@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 
 // Configura a conexão com o Redis
 const redis = new Redis({
-  host: 'localhost', 
+  host: 'redis', // Nome do serviço no docker-compose.yml
   port: 6379,
 });
 

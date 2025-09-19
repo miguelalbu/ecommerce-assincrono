@@ -3,13 +3,19 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/index.js",
-  "scripts": {
-    "dev:api": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "dev:stock": "ts-node-dev --respawn --transpile-only src/services/stock-service.ts",
-    "dev": "concurrently \"npm:dev:*\"",
-    "build": "tsc",
-    "start": "node dist/index.js"
-  },
+"scripts": {
+  "dev": "prisma generate && concurrently \"npm:dev:*\"",
+  "dev:api": "ts-node-dev --respawn --transpile-only src/index.ts",
+  "dev:stock": "ts-node-dev --respawn --transpile-only src/services/stock-service.ts",
+  "build": "tsc",
+  "test": "jest",
+  "postinstall": "prisma generate"
+},
+ 
+"prisma": {
+  "seed": "ts-node prisma/seed.ts"
+},
+
   "keywords": [],
   "author": "",
   "license": "ISC",
